@@ -14,7 +14,7 @@ final class RegistryCache
 
     public function __construct(?Filesystem $files = null)
     {
-        $this->files = $files ?? new Filesystem;
+        $this->files = $files ?? new Filesystem();
     }
 
     public function load(array $paths, bool $useCache, string $path): ModuleRegistry
@@ -28,7 +28,7 @@ final class RegistryCache
             return $registry;
         }
 
-        return (new ModuleDiscovery)->discover($paths);
+        return (new ModuleDiscovery())->discover($paths);
     }
 
     public function write(ModuleRegistry $registry, string $path): void

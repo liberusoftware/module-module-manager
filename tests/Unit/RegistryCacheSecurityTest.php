@@ -13,7 +13,7 @@ final class RegistryCacheSecurityTest extends TestCase
     {
         $path = tempnam(sys_get_temp_dir(), 'registry-security-');
         try {
-            $cache = new RegistryCache;
+            $cache = new RegistryCache();
             $cache->write(new ModuleRegistry([]), $path);
             self::assertSame([], $cache->load([], true, $path)->all());
         } finally {
@@ -28,7 +28,7 @@ final class RegistryCacheSecurityTest extends TestCase
         $property = "\0".$class."\0modules";
         file_put_contents($path, sprintf('O:%d:"%s":1:{s:%d:"%s";a:0:{}}', strlen($class), $class, strlen($property), $property));
         try {
-            self::assertSame([], (new RegistryCache)->load([], true, $path)->all());
+            self::assertSame([], (new RegistryCache())->load([], true, $path)->all());
         } finally {
             unlink($path);
         }
@@ -38,9 +38,9 @@ final class RegistryCacheSecurityTest extends TestCase
     {
         $path = tempnam(sys_get_temp_dir(), 'registry-security-');
         CachePayload::$awakened = false;
-        file_put_contents($path, serialize(new ModuleRegistry(['payload' => new CachePayload])));
+        file_put_contents($path, serialize(new ModuleRegistry(['payload' => new CachePayload()])));
         try {
-            (new RegistryCache)->load([], true, $path);
+            (new RegistryCache())->load([], true, $path);
             self::fail('An unexpected cached object was accepted.');
         } catch (RuntimeException) {
             self::assertFalse(CachePayload::$awakened);
