@@ -26,12 +26,9 @@ final class ModuleValidator
             }
 
             $packageName = $composer['name'] ?? null;
-            $isLocalModule = is_string($packageName)
-                && $this->isWithinConfiguredModulePath($manifest->path);
-
-            if (! is_string($packageName) || (! InstalledVersions::isInstalled($packageName) && ! $isLocalModule)) {
+            if (! is_string($packageName) || ! InstalledVersions::isInstalled($packageName)) {
                 $errors[] = "{$manifest->name()}: Composer package is not installed.";
-            } elseif (! $isLocalModule && InstalledVersions::getPrettyVersion($packageName) !== $manifest->version()) {
+            } elseif (InstalledVersions::getPrettyVersion($packageName) !== $manifest->version()) {
                 $errors[] = "{$manifest->name()}: installed Composer version does not match the manifest.";
             }
 
@@ -77,34 +74,5 @@ final class ModuleValidator
         }
 
         return $errors;
-    }
-
-    private function isWithinConfiguredModulePath(string $path): bool
-    {
-        $modulePath = realpath($path);
-
-        if ($modulePath === false) {
-            return false;
-        }
-
-        $configuredPaths = app()->bound('config') ? config('modules.paths', []) : [];
-
-        if (! is_array($configuredPaths)) {
-            return false;
-        }
-
-        foreach ($configuredPaths as $configuredPath) {
-            if (! is_string($configuredPath)) {
-                continue;
-            }
-
-            $rootPath = realpath($configuredPath);
-
-            if ($rootPath !== false && ($modulePath === $rootPath || str_starts_with($modulePath, $rootPath.DIRECTORY_SEPARATOR))) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

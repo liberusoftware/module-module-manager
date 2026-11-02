@@ -40,8 +40,11 @@ final class ModuleDiscovery
                     throw new InvalidManifest("Module [{$manifest->name()}] has a missing or duplicate Composer package name.");
                 }
                 if (isset($modules[$manifest->name()])) {
-                    if (($packageNames[$package] ?? null) === $manifest->name()
-                        && $modules[$manifest->name()]->version() === $manifest->version()) {
+                    // Configured local module roots are scanned before Composer's
+                    // installed package roots. A local module is the deliberate
+                    // development override, so its manifest remains authoritative
+                    // even when the installed archive carries stale metadata.
+                    if (($packageNames[$package] ?? null) === $manifest->name()) {
                         continue;
                     }
                     throw new InvalidManifest("Duplicate module [{$manifest->name()}].");
