@@ -77,7 +77,9 @@ final class ModuleDiscovery
             // for the same package. This also makes package renames atomic while old
             // and new package names coexist in a developer's working tree.
             if (isset($packageNames[$package])) {
-                if ($isInstalledCopy || isset($installedPackageNames[$package])) {
+                $isIdenticalCopy = $packageNames[$package] === $manifest->name()
+                    && $modules[$manifest->name()]->version() === $manifest->version();
+                if ($isInstalledCopy || isset($installedPackageNames[$package]) || $isIdenticalCopy) {
                     continue;
                 }
 
