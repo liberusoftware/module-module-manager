@@ -1,6 +1,7 @@
 <?php
 
 use Composer\InstalledVersions;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\ServiceProvider;
 use Liberu\Foundation\ModuleManager\Cache\RegistryCache;
@@ -36,7 +37,7 @@ beforeEach(function () {
 
 afterEach(function () {
     InstalledVersions::reload($this->original);
-    (new Illuminate\Filesystem\Filesystem)->deleteDirectory($this->root);
+    (new Filesystem())->deleteDirectory($this->root);
 });
 
 function isolatedModule(object $test, string $name, array $manifest = [], ?string $raw = null, bool $installed = true): void
@@ -60,7 +61,7 @@ function isolatedModule(object $test, string $name, array $manifest = [], ?strin
 
 function isolatedLoader(object $test, array $required = [], array $enabled = [], array $disabled = [], bool $cached = false, string $cachePath = ''): ModuleLoader
 {
-    return new ModuleLoader(new ModuleValidator, new RegistryCache, [$test->root], $enabled, $disabled, $required, $cached, $cachePath);
+    return new ModuleLoader(new ModuleValidator(), new RegistryCache(), [$test->root], $enabled, $disabled, $required, $cached, $cachePath);
 }
 
 it('reports an unreadable manifest and still loads the others', function () {
@@ -117,7 +118,7 @@ it('rejects the later of two modules claiming one capability', function () {
 it('still stops at the first problem through discover()', function () {
     isolatedModule($this, 'broken-json', raw: '{ not json');
 
-    expect(fn () => (new ModuleDiscovery)->discover([$this->root]))->toThrow(JsonException::class);
+    expect(fn () => (new ModuleDiscovery())->discover([$this->root]))->toThrow(JsonException::class);
 });
 
 it('keeps a required module on when disabled, and records the refusal', function () {
@@ -147,7 +148,7 @@ it('stops with the name when a required module is missing or broken', function (
 it('boots the same modules from a cache', function () {
     isolatedModule($this, 'good');
     $path = "{$this->root}/registry.cache";
-    (new RegistryCache)->write((new ModuleDiscovery)->discover([$this->root]), $path);
+    (new RegistryCache())->write((new ModuleDiscovery())->discover([$this->root]), $path);
 
     expect(array_keys(isolatedLoader($this, cached: true, cachePath: $path)->load()->booted))
         ->toBe(array_keys(isolatedLoader($this)->load()->booted));

@@ -12,10 +12,10 @@ use RuntimeException;
 final class ModuleLoader
 {
     /**
-     * @param list<string> $paths
-     * @param list<string> $enabled
-     * @param list<string> $disabled
-     * @param list<string> $required
+     * @param  list<string>  $paths
+     * @param  list<string>  $enabled
+     * @param  list<string>  $disabled
+     * @param  list<string>  $required
      */
     public function __construct(
         private readonly ModuleValidator $validator,
@@ -35,7 +35,7 @@ final class ModuleLoader
             return $this->select($this->cache->load($this->paths, true, $this->cachePath)->all(), [], validate: false);
         }
 
-        [$registry, $problems] = (new ModuleDiscovery)->discoverTolerant($this->paths);
+        [$registry, $problems] = (new ModuleDiscovery())->discoverTolerant($this->paths);
 
         return $this->select($registry->all(), $problems, validate: true);
     }
@@ -47,7 +47,7 @@ final class ModuleLoader
      */
     public function audit(): array
     {
-        [$registry, $problems] = (new ModuleDiscovery)->discoverTolerant($this->paths);
+        [$registry, $problems] = (new ModuleDiscovery())->discoverTolerant($this->paths);
 
         foreach ($this->validator->validate($registry, Application::VERSION) as $error) {
             $problems[$this->owner($error, $registry->all())][] = $error;
@@ -57,8 +57,8 @@ final class ModuleLoader
     }
 
     /**
-     * @param array<string, Manifest> $manifests
-     * @param array<string, list<string>> $problems
+     * @param  array<string, Manifest>  $manifests
+     * @param  array<string, list<string>>  $problems
      */
     private function select(array $manifests, array $problems, bool $validate): ModuleInventory
     {
@@ -109,8 +109,8 @@ final class ModuleLoader
     }
 
     /**
-     * @param list<string> $excluded
-     * @param array<string, list<string>> $problems
+     * @param  list<string>  $excluded
+     * @param  array<string, list<string>>  $problems
      */
     private function exclude(string $name, string $problem, array &$excluded, array &$problems): void
     {
@@ -130,7 +130,7 @@ final class ModuleLoader
     /**
      * The validator and registry name their module first: `name: …`, or `Module [name] …`.
      *
-     * @param array<string, Manifest> $manifests
+     * @param  array<string, Manifest>  $manifests
      */
     private function owner(string $message, array $manifests): string
     {

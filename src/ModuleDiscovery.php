@@ -11,7 +11,7 @@ final class ModuleDiscovery
     /**
      * Stops at the first invalid module.
      *
-     * @param list<string> $paths
+     * @param  list<string>  $paths
      */
     public function discover(array $paths): ModuleRegistry
     {
@@ -21,7 +21,7 @@ final class ModuleDiscovery
     /**
      * Skips each invalid module and reports it, by module name or by directory when the manifest cannot be read.
      *
-     * @param list<string> $paths
+     * @param  list<string>  $paths
      * @return array{0: ModuleRegistry, 1: array<string, list<string>>}
      */
     public function discoverTolerant(array $paths): array
@@ -33,8 +33,8 @@ final class ModuleDiscovery
     }
 
     /**
-     * @param list<string> $paths
-     * @param array<string, list<string>>|null $problems collected here when given; otherwise the first one throws
+     * @param  list<string>  $paths
+     * @param  array<string, list<string>>|null  $problems  collected here when given; otherwise the first one throws
      * @return array<string, Manifest>
      */
     private function scan(array $paths, ?array &$problems = null): array

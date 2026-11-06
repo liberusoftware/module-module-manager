@@ -6,11 +6,11 @@ namespace Liberu\Foundation\ModuleManager;
 final class ModuleInventory
 {
     /**
-     * @param array<string, Manifest> $manifests every readable manifest, by module name
-     * @param array<string, Manifest> $booted in dependency order
-     * @param array<string, list<string>> $problems by module name, or directory when the manifest is unreadable
-     * @param list<string> $required
-     * @param list<string> $refusedDisables required modules that the disabled list named
+     * @param  array<string, Manifest>  $manifests  every readable manifest, by module name
+     * @param  array<string, Manifest>  $booted  in dependency order
+     * @param  array<string, list<string>>  $problems  by module name, or directory when the manifest is unreadable
+     * @param  list<string>  $required
+     * @param  list<string>  $refusedDisables  required modules that the disabled list named
      */
     public function __construct(
         public readonly array $manifests,
