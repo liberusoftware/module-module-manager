@@ -52,6 +52,22 @@ The trusted `liberusoftware/composer-installer` places it in `/modules/module-ma
 
 - No separate contract type is declared; use the documented provider and capability boundary.
 
+### Failure isolation
+
+By default, the first invalid module stops the boot. A host where one optional module must not take down the rest can opt in:
+
+```php
+// config/modules.php
+'isolate_failures' => true,
+'required' => ['module-manager', 'tenancy'],
+```
+
+A module that fails is then left out, logged and reported by `module:list`, and `module:validate` still fails, so a build stops before a deployment does. A module in `required` cannot be disabled, and if it fails, the boot stops with its name and the reason.
+
+A provider that throws in `register()` is isolated. One that throws in `boot()` is not, because Laravel offers no hook for it.
+
+Hosts should list modules that declare `extra.laravel.providers` under `extra.laravel.dont-discover`, or package discovery registers them whatever this configuration says. `module:validate --strict` fails if any remain.
+
 ### Commands
 
 - `module:features {query?}` lists or searches feature declarations across installed modules.
@@ -59,7 +75,7 @@ The trusted `liberusoftware/composer-installer` places it in `/modules/module-ma
 - `src/Console/ClearModulesCommand.php`
 - `src/Console/ListModulesCommand.php`
 - `src/Console/ModuleStatusCommand.php`
-- `src/Console/ValidateModulesCommand.php`
+- `src/Console/ValidateModulesCommand.php`: `--strict` also fails on modules registered by package discovery
 
 ### Events
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Add opt-in failure isolation. With `modules.isolate_failures`, a module that fails discovery, validation, dependency resolution or provider registration is left out and reported, and the rest of the application boots. Off by default, so existing hosts still fail fast.
+- Add `modules.required`, for modules a host cannot run without. With isolation on, these cannot be disabled, and a failure among them still stops the boot with the module's name.
+- Add `ModuleLoader`, `ModuleInventory` and `ModuleDiscovery::discoverTolerant()`.
+- `module:list` gains `--json` and Kind, Status and Problems columns. `module:status` gains status, kind and problems. `module:validate` reports invalid manifests one by one, warns when Laravel package discovery registers a module, and fails on that with `--strict`.
+- With isolation on, `module:cache` validates first, because a cached boot then skips validation.
+- Fix discovery rejecting identical copies of a module under two roots.
+
 ## 1.2.1 - 2026-08-06
 
 - Split CI into the three workflows `CONFORMANCE.md` §3.9 asks for, rather than one calling all
