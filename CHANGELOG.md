@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.7.0 - 2026-11-06
 
 - Add opt-in failure isolation. With `modules.isolate_failures`, a module that fails discovery, validation, dependency resolution or provider registration is left out and reported, and the rest of the application boots. Off by default, so existing hosts still fail fast.
 - Add `modules.required`, for modules a host cannot run without. With isolation on, these cannot be disabled, and a failure among them still stops the boot with the module's name.
