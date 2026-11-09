@@ -18,9 +18,12 @@
   "extra": {
     "liberu": {
       "name": "module-manager"
+    },
+    "branch-alias": {
+      "dev-feat/module-activation": "1.8.x-dev"
     }
   },
-  "version": "1.7.0",
+  "version": "1.8.0",
   "autoload-dev": {
     "psr-4": {
       "Liberu\\Foundation\\ModuleManager\\Tests\\": "tests/"
