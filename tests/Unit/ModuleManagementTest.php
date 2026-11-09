@@ -27,7 +27,7 @@ beforeEach(function () {
 
 afterEach(function () {
     InstalledVersions::reload($this->original);
-    (new Filesystem)->deleteDirectory($this->root);
+    (new Filesystem())->deleteDirectory($this->root);
 });
 
 function managedModule(object $test, string $name, array $manifest = [], ?string $composerVersion = '1.0.0'): void
@@ -51,15 +51,15 @@ function managedInventory(object $test, array $required = [], array $enabled = [
 {
     [$enabled, $disabled] = ModuleActivations::apply($enabled, $disabled, app(ModuleActivations::class)->all());
 
-    return (new ModuleLoader(new ModuleValidator, new RegistryCache, [$test->root], $enabled, $disabled, $required))->load();
+    return (new ModuleLoader(new ModuleValidator(), new RegistryCache(), [$test->root], $enabled, $disabled, $required))->load();
 }
 
 function management(object $test, array $required = [], array $enabled = [], array $disabled = [], array $discovered = []): ModuleManagement
 {
-    $packages = new PackageManifest(new Filesystem, base_path(), "{$test->root}/packages.php");
+    $packages = new PackageManifest(new Filesystem(), base_path(), "{$test->root}/packages.php");
     $packages->manifest = ['local/discovered' => ['providers' => $discovered]];
 
-    return new ModuleManagement(managedInventory($test, $required, $enabled, $disabled), app(ModuleActivations::class), new ModuleValidator, $packages, $enabled, $disabled);
+    return new ModuleManagement(managedInventory($test, $required, $enabled, $disabled), app(ModuleActivations::class), new ModuleValidator(), $packages, $enabled, $disabled);
 }
 
 it('lists only modules Composer installed, with the version Composer installed', function () {
