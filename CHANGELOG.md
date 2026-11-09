@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.8.0 - Unreleased
+## 1.8.0 - 2026-11-10
 
 - Add `ModuleManagement`: lists Composer-installed modules with their installed version and status, and enables or disables them. A choice is stored in the new `module_activations` table and applied at the next boot; Composer still installs and removes packages. Required modules, modules in `MODULES_DISABLED` and modules Laravel auto-discovers cannot be changed, and a change that would leave a module without a dependency is refused.
 
