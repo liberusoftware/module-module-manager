@@ -83,7 +83,7 @@ Hosts should list modules that declare `extra.laravel.providers` under `extra.la
 
 ### Persistence and permissions
 
-- This package owns no database migration.
+- `module_activations` stores administrators' enable and disable choices.
 
 Authorization remains the host application's responsibility unless a public authorizer contract is listed above. Consumers should grant only the permissions needed for the exported capabilities and must not couple to internal tables or classes.
 

@@ -3,6 +3,7 @@
 namespace Liberu\Foundation\ModuleManager;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Foundation\PackageManifest;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Liberu\Foundation\ModuleManager\Cache\RegistryCache;
@@ -21,12 +22,25 @@ final class ModuleManagerServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/modules.php', 'modules');
         $this->app->singleton(RegistryCache::class);
+        [$enabled, $disabled] = ModuleActivations::apply(
+            (array) config('modules.enabled', []),
+            (array) config('modules.disabled', []),
+            $this->app->make(ModuleActivations::class)->all(),
+        );
+        $this->app->bind(ModuleManagement::class, fn () => new ModuleManagement(
+            $this->app->make(ModuleInventory::class),
+            $this->app->make(ModuleActivations::class),
+            $this->app->make(ModuleValidator::class),
+            $this->app->make(PackageManifest::class),
+            (array) config('modules.enabled', []),
+            (array) config('modules.disabled', []),
+        ));
         $this->app->singleton(ModuleLoader::class, fn () => new ModuleLoader(
             $this->app->make(ModuleValidator::class),
             $this->app->make(RegistryCache::class),
             (array) config('modules.paths', [base_path('modules')]),
-            (array) config('modules.enabled', []),
-            (array) config('modules.disabled', []),
+            $enabled,
+            $disabled,
             (array) config('modules.required', []),
             (bool) config('modules.cache', false),
             (string) config('modules.cache_path'),
@@ -45,7 +59,7 @@ final class ModuleManagerServiceProvider extends ServiceProvider
         ));
 
         $registry = $this->app->make(ModuleRegistry::class);
-        $modules = $registry->resolve(config('modules.enabled', []), config('modules.disabled', []));
+        $modules = $registry->resolve($enabled, $disabled);
         $selected = [];
         foreach ($modules as $module) {
             $selected[$module->name()] = $module;
@@ -97,6 +111,7 @@ final class ModuleManagerServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->publishes([__DIR__.'/../config/modules.php' => config_path('modules.php')], 'modules-config');
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         if ($this->app->runningInConsole()) {
             $this->commands([CacheModulesCommand::class, ClearModulesCommand::class, ListFeaturesCommand::class, ListModulesCommand::class, ModuleStatusCommand::class, ValidateModulesCommand::class]);

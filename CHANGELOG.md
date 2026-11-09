@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.0 - 2026-11-10
+
+- Add `ModuleManagement`: lists Composer-installed modules with their installed version and status, and enables or disables them. A choice is stored in the new `module_activations` table and applied at the next boot; Composer still installs and removes packages. Required modules, modules in `MODULES_DISABLED` and modules Laravel auto-discovers cannot be changed, and a change that would leave a module without a dependency is refused.
+
 ## 1.7.0 - 2026-11-06
 
 - Add opt-in failure isolation. With `modules.isolate_failures`, a module that fails discovery, validation, dependency resolution or provider registration is left out and reported, and the rest of the application boots. Off by default, so existing hosts still fail fast.
