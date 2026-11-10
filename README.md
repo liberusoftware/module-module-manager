@@ -85,6 +85,10 @@ Hosts should list modules that declare `extra.laravel.providers` under `extra.la
 
 - `module_activations` stores administrators' enable and disable choices.
 
+### Feature modules
+
+`ModuleManagement` lists and switches only modules whose manifest declares `"module_type": "feature"`. A manifest without the key, or with `"infrastructure"`, is infrastructure: it is never listed and cannot be switched there. `module:list` and `module:status` still show every module.
+
 Authorization remains the host application's responsibility unless a public authorizer contract is listed above. Consumers should grant only the permissions needed for the exported capabilities and must not couple to internal tables or classes.
 
 ## Testing

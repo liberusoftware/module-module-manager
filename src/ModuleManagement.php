@@ -33,7 +33,7 @@ final readonly class ModuleManagement
         foreach ($this->inventory->manifests as $name => $manifest) {
             $package = $this->packageName($manifest);
 
-            if ($package === null) {
+            if ($package === null || ! $manifest->isFeature()) {
                 continue;
             }
 
@@ -71,6 +71,10 @@ final readonly class ModuleManagement
 
         if ($manifest === null || $this->packageName($manifest) === null) {
             throw new ModuleActivationRefused("Module [{$module}] is not installed through Composer.");
+        }
+
+        if (! $manifest->isFeature()) {
+            throw new ModuleActivationRefused("Module [{$module}] is infrastructure, not a feature module.");
         }
 
         if (($reason = $this->lockReason($module, $manifest)) !== null) {
