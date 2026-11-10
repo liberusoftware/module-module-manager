@@ -24,7 +24,7 @@ final readonly class ModuleManagement
         private array $disabled,
     ) {}
 
-    /** @return array<string, array{module: string, name: string, version: string, status: 'enabled'|'disabled'|'failed', locked: ?string, problems: list<string>}> */
+    /** @return array<string, array{module: string, name: string, description: string, version: string, status: 'enabled'|'disabled'|'failed', locked: ?string, problems: list<string>}> */
     public function modules(): array
     {
         $choices = $this->activations->all();
@@ -33,7 +33,7 @@ final readonly class ModuleManagement
         foreach ($this->inventory->manifests as $name => $manifest) {
             $package = $this->packageName($manifest);
 
-            if ($package === null) {
+            if ($package === null || ! $manifest->isFeature()) {
                 continue;
             }
 
@@ -43,6 +43,7 @@ final readonly class ModuleManagement
             $modules[$name] = [
                 'module' => $name,
                 'name' => $manifest->displayName(),
+                'description' => $manifest->description(),
                 'version' => ltrim((string) InstalledVersions::getPrettyVersion($package), 'v'),
                 'status' => ! $on ? 'disabled' : ($problems === [] ? 'enabled' : 'failed'),
                 'locked' => $this->lockReason($name, $manifest),
@@ -71,6 +72,10 @@ final readonly class ModuleManagement
 
         if ($manifest === null || $this->packageName($manifest) === null) {
             throw new ModuleActivationRefused("Module [{$module}] is not installed through Composer.");
+        }
+
+        if (! $manifest->isFeature()) {
+            throw new ModuleActivationRefused("Module [{$module}] is infrastructure, not a feature module.");
         }
 
         if (($reason = $this->lockReason($module, $manifest)) !== null) {

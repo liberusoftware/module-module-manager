@@ -7,7 +7,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Liberu\Foundation\ModuleManager\Cache\RegistryCache;
+use Liberu\Foundation\ModuleManager\Exceptions\InvalidManifest;
 use Liberu\Foundation\ModuleManager\Exceptions\ModuleActivationRefused;
+use Liberu\Foundation\ModuleManager\Manifest;
 use Liberu\Foundation\ModuleManager\ModuleActivations;
 use Liberu\Foundation\ModuleManager\ModuleInventory;
 use Liberu\Foundation\ModuleManager\ModuleLoader;
@@ -37,7 +39,7 @@ function managedModule(object $test, string $name, array $manifest = [], ?string
     file_put_contents("{$dir}/module.json", json_encode($manifest + [
         'name' => $name, 'display_name' => ucfirst($name), 'description' => 'Test', 'version' => '1.0.0', 'category' => 'capability',
         'provider' => ManagedProvider::class, 'requires' => ['packages' => []], 'capabilities' => [],
-        'features' => ['Test'], 'default_enabled' => false,
+        'features' => ['Test'], 'default_enabled' => false, 'module_type' => 'feature',
     ], JSON_THROW_ON_ERROR));
     file_put_contents("{$dir}/composer.json", json_encode(['name' => "local/{$name}", 'type' => 'liberu-module', 'extra' => ['liberu' => ['name' => $name]]], JSON_THROW_ON_ERROR));
 
@@ -63,13 +65,30 @@ function management(object $test, array $required = [], array $enabled = [], arr
 }
 
 it('lists only modules Composer installed, with the version Composer installed', function () {
-    managedModule($this, 'alpha', ['version' => '2.3.4'], composerVersion: 'v2.3.4');
+    managedModule($this, 'alpha', ['version' => '2.3.4', 'description' => 'Sends orders to Alpha.'], composerVersion: 'v2.3.4');
     managedModule($this, 'copied-in', composerVersion: null);
 
     $modules = management($this)->modules();
 
     expect($modules)->toHaveKey('alpha')->not->toHaveKey('copied-in')
-        ->and($modules['alpha'])->toMatchArray(['name' => 'Alpha', 'version' => '2.3.4', 'status' => 'disabled', 'locked' => null]);
+        ->and($modules['alpha'])->toMatchArray(['name' => 'Alpha', 'description' => 'Sends orders to Alpha.', 'version' => '2.3.4', 'status' => 'disabled', 'locked' => null]);
+});
+
+it('lists only feature modules, never infrastructure', function () {
+    managedModule($this, 'alpha');
+    managedModule($this, 'platform', ['module_type' => 'infrastructure', 'default_enabled' => true]);
+    managedModule($this, 'undeclared', ['module_type' => null, 'default_enabled' => true]);
+
+    expect(array_keys(management($this)->modules()))->toBe(['alpha'])
+        ->and(fn () => management($this)->disable('platform'))->toThrow(ModuleActivationRefused::class, 'infrastructure')
+        ->and(fn () => management($this)->disable('undeclared'))->toThrow(ModuleActivationRefused::class, 'infrastructure')
+        ->and(managedInventory($this)->isBooted('platform'))->toBeTrue();
+});
+
+it('rejects a manifest with an unknown module type', function () {
+    managedModule($this, 'odd', ['module_type' => 'plugin']);
+
+    expect(fn () => Manifest::fromFile("{$this->root}/odd/module.json"))->toThrow(InvalidManifest::class, 'module_type');
 });
 
 it('enables a module so the next boot registers it', function () {

@@ -8,6 +8,9 @@ final readonly class Manifest
 {
     public const CATEGORIES = ['foundation', 'contracts', 'capability', 'adapter', 'product', 'presentation', 'distribution'];
 
+    /** A feature is something an administrator switches on and off; infrastructure is what the application is built on. */
+    public const MODULE_TYPES = ['feature', 'infrastructure'];
+
     /** @param array<string, mixed> $data */
     private function __construct(public string $path, private array $data) {}
 
@@ -31,6 +34,10 @@ final readonly class Manifest
 
         if (! in_array($data['category'], self::CATEGORIES, true)) {
             throw new InvalidManifest("Manifest {$path} has an invalid category [{$data['category']}].");
+        }
+
+        if (! in_array($data['module_type'] ?? 'infrastructure', self::MODULE_TYPES, true)) {
+            throw new InvalidManifest("Manifest {$path} module_type must be one of: ".implode(', ', self::MODULE_TYPES).'.');
         }
 
         if (! is_bool($data['default_enabled'])) {
@@ -75,6 +82,11 @@ final readonly class Manifest
         return $this->data['display_name'];
     }
 
+    public function description(): string
+    {
+        return (string) $this->data['description'];
+    }
+
     public function category(): string
     {
         return $this->data['category'];
@@ -83,6 +95,12 @@ final readonly class Manifest
     public function provider(): string
     {
         return $this->data['provider'];
+    }
+
+    /** Only a manifest that declares "module_type": "feature" is one; without the key a module is infrastructure. */
+    public function isFeature(): bool
+    {
+        return ($this->data['module_type'] ?? 'infrastructure') === 'feature';
     }
 
     public function defaultEnabled(): bool
