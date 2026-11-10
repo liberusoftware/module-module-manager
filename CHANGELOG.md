@@ -2,6 +2,7 @@
 
 ## 1.9.0 - Unreleased
 
+- `ModuleManagement::modules()` includes each module's manifest description, and `Manifest` gains `description()`.
 - Add the optional manifest key `module_type`, `feature` or `infrastructure`, defaulting to `infrastructure`. `ModuleManagement` lists and switches only feature modules, so infrastructure such as this package never appears as something to turn off.
 
 ## 1.8.0 - 2026-11-10

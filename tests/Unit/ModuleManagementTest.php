@@ -65,13 +65,13 @@ function management(object $test, array $required = [], array $enabled = [], arr
 }
 
 it('lists only modules Composer installed, with the version Composer installed', function () {
-    managedModule($this, 'alpha', ['version' => '2.3.4'], composerVersion: 'v2.3.4');
+    managedModule($this, 'alpha', ['version' => '2.3.4', 'description' => 'Sends orders to Alpha.'], composerVersion: 'v2.3.4');
     managedModule($this, 'copied-in', composerVersion: null);
 
     $modules = management($this)->modules();
 
     expect($modules)->toHaveKey('alpha')->not->toHaveKey('copied-in')
-        ->and($modules['alpha'])->toMatchArray(['name' => 'Alpha', 'version' => '2.3.4', 'status' => 'disabled', 'locked' => null]);
+        ->and($modules['alpha'])->toMatchArray(['name' => 'Alpha', 'description' => 'Sends orders to Alpha.', 'version' => '2.3.4', 'status' => 'disabled', 'locked' => null]);
 });
 
 it('lists only feature modules, never infrastructure', function () {

@@ -82,6 +82,11 @@ final readonly class Manifest
         return $this->data['display_name'];
     }
 
+    public function description(): string
+    {
+        return (string) $this->data['description'];
+    }
+
     public function category(): string
     {
         return $this->data['category'];
