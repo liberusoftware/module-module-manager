@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.9.0 - Unreleased
 
 - Add the optional manifest key `module_type`, `feature` or `infrastructure`, defaulting to `infrastructure`. `ModuleManagement` lists and switches only feature modules, so infrastructure such as this package never appears as something to turn off.
 
