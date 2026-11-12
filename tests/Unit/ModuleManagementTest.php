@@ -14,6 +14,7 @@ use Liberu\Foundation\ModuleManager\ModuleActivations;
 use Liberu\Foundation\ModuleManager\ModuleInventory;
 use Liberu\Foundation\ModuleManager\ModuleLoader;
 use Liberu\Foundation\ModuleManager\ModuleManagement;
+use Liberu\Foundation\ModuleManager\ModuleRegistry;
 use Liberu\Foundation\ModuleManager\ModuleValidator;
 
 final class ManagedProvider extends ServiceProvider {}
@@ -180,4 +181,21 @@ it('falls back to the configured selection before the table exists', function ()
     Schema::drop('module_activations');
 
     expect(app(ModuleActivations::class)->all())->toBe([]);
+});
+
+it('validates a module Composer installed under its liberusoftware/module-liberu-* name', function () {
+    $dir = "{$this->root}/liberu-alpha";
+    mkdir($dir, 0777, true);
+    file_put_contents("{$dir}/module.json", json_encode([
+        'name' => 'liberu-alpha', 'display_name' => 'Alpha', 'description' => 'Test', 'version' => '1.1.2', 'category' => 'capability',
+        'provider' => ManagedProvider::class, 'requires' => ['packages' => []], 'capabilities' => [],
+        'features' => ['Test'], 'default_enabled' => true,
+    ], JSON_THROW_ON_ERROR));
+    file_put_contents("{$dir}/composer.json", json_encode(['name' => 'liberusoftware/module-liberu-alpha', 'type' => 'liberu-module', 'extra' => ['liberu' => ['name' => 'liberu-alpha']]], JSON_THROW_ON_ERROR));
+    $this->composer['versions']['liberusoftware/module-liberu-alpha'] = ['pretty_version' => '1.1.2', 'version' => '1.1.2.0', 'reference' => null, 'type' => 'liberu-module', 'install_path' => $dir, 'aliases' => [], 'dev_requirement' => false];
+    InstalledVersions::reload($this->composer);
+
+    $errors = (new ModuleValidator())->validate(new ModuleRegistry(['liberu-alpha' => Manifest::fromFile("{$dir}/module.json")]), app()->version());
+
+    expect(implode(' ', $errors))->not->toContain('not installed')->not->toContain('version does not match');
 });
