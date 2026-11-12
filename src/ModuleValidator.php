@@ -26,9 +26,9 @@ final class ModuleValidator
             }
 
             $packageName = isset($composer['name']) && is_string($composer['name'])
-                ? $this->canonicalPackageName($composer['name'])
+                ? $this->installedPackageName($composer['name'])
                 : null;
-            if (! is_string($packageName) || ! InstalledVersions::isInstalled($packageName)) {
+            if ($packageName === null) {
                 $errors[] = "{$manifest->name()}: Composer package is not installed.";
             } elseif (! $this->compatiblePatchVersion(
                 (string) InstalledVersions::getPrettyVersion($packageName),
@@ -81,6 +81,18 @@ final class ModuleValidator
         }
 
         return $errors;
+    }
+
+    /** The name Composer installed it under: as declared, or the canonical liberusoftware/liberu-* name. */
+    private function installedPackageName(string $package): ?string
+    {
+        foreach (array_unique([$package, $this->canonicalPackageName($package)]) as $name) {
+            if (InstalledVersions::isInstalled($name)) {
+                return $name;
+            }
+        }
+
+        return null;
     }
 
     private function canonicalPackageName(string $package): string

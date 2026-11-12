@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.1 - 2026-11-13
+
+- Fix validation reporting "Composer package is not installed" for a module Composer installed under its `liberusoftware/module-liberu-*` name. The validator now accepts the declared name as well as the canonical `liberusoftware/liberu-*` one.
+
 ## 1.9.0 - 2026-11-10
 
 - `ModuleManagement::modules()` includes each module's manifest description, and `Manifest` gains `description()`.
