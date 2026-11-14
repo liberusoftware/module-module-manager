@@ -2,14 +2,17 @@
 
 use Composer\InstalledVersions;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Foundation\PackageManifest;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\ServiceProvider;
 use Liberu\Foundation\ModuleManager\Cache\RegistryCache;
 use Liberu\Foundation\ModuleManager\Exceptions\RequiredModuleFailed;
+use Liberu\Foundation\ModuleManager\Manifest;
 use Liberu\Foundation\ModuleManager\ModuleDiscovery;
 use Liberu\Foundation\ModuleManager\ModuleInventory;
 use Liberu\Foundation\ModuleManager\ModuleLoader;
 use Liberu\Foundation\ModuleManager\ModuleManagerServiceProvider;
+use Liberu\Foundation\ModuleManager\ModuleRegistry;
 use Liberu\Foundation\ModuleManager\ModuleValidator;
 
 final class IsolatedGoodProvider extends ServiceProvider
@@ -200,4 +203,72 @@ it('reports through the commands', function () {
         ->and(Artisan::output())->toContain('invalid');
     expect(Artisan::call('module:status', ['name' => 'nothing']))->toBe(1);
     expect(Artisan::call('module:cache'))->toBe(1);
+});
+
+it('boots valid providers and exposes feature listing and cache lifecycle commands', function () {
+    isolatedModule($this, 'good');
+    config(['modules.paths' => [$this->root], 'modules.isolate_failures' => false, 'modules.cache_path' => $this->root.'/registry.cache']);
+    $this->app->register(ModuleManagerServiceProvider::class, true);
+
+    expect($this->app->bound('isolated.good'))->toBeTrue()
+        ->and(Artisan::call('module:list'))->toBe(0)
+        ->and(Artisan::output())->toContain('good', 'booted')
+        ->and(Artisan::call('module:features', ['query' => 'test']))->toBe(0)
+        ->and(Artisan::output())->toContain('good', 'Test')
+        ->and(Artisan::call('module:cache'))->toBe(0)
+        ->and(is_file($this->root.'/registry.cache'))->toBeTrue()
+        ->and(Artisan::call('module:clear'))->toBe(0)
+        ->and(is_file($this->root.'/registry.cache'))->toBeFalse()
+        ->and(Artisan::call('module:validate'))->toBe(0)
+        ->and(Artisan::output())->toContain('All discovered modules are valid.');
+});
+
+it('warns about bypassing discovery and refuses it in strict validation', function () {
+    isolatedModule($this, 'good');
+    config(['modules.paths' => [$this->root], 'modules.isolate_failures' => true]);
+    $this->app->register(ModuleManagerServiceProvider::class, true);
+    $packages = new PackageManifest(new Filesystem(), base_path(), $this->root.'/packages.php');
+    $packages->manifest = ['local/good' => ['providers' => [IsolatedGoodProvider::class]]];
+    $this->app->instance(PackageManifest::class, $packages);
+
+    expect(Artisan::call('module:validate'))->toBe(0)
+        ->and(Artisan::output())->toContain('bypasses the module manager')
+        ->and(Artisan::call('module:validate', ['--strict' => true]))->toBe(1)
+        ->and(Artisan::output())->toContain('bypasses the module manager');
+});
+
+it('reports required modules that an administrator tried to disable', function () {
+    isolatedModule($this, 'good');
+    config(['modules.paths' => [$this->root], 'modules.isolate_failures' => true, 'modules.required' => ['good'], 'modules.disabled' => ['good']]);
+    $this->app->register(ModuleManagerServiceProvider::class, true);
+
+    expect(Artisan::call('module:validate'))->toBe(1)
+        ->and(Artisan::output())->toContain('the disabled list names a required module');
+});
+
+it('audits metadata faults even for disabled modules', function () {
+    isolatedModule($this, 'bad-metadata', ['provider' => 'AbsentProvider', 'default_enabled' => false]);
+
+    expect(isolatedLoader($this)->audit()['bad-metadata'][0])->toContain('not autoloadable');
+});
+
+it('chooses the canonical checkout when a legacy directory is also installed', function () {
+    isolatedModule($this, 'module-liberu-renamed', ['name' => 'liberu-renamed']);
+    isolatedModule($this, 'liberu-renamed');
+    [$registry, $problems] = (new ModuleDiscovery())->discoverTolerant([$this->root]);
+
+    expect(array_keys($registry->all()))->toContain('liberu-renamed')->not->toContain('module-liberu-renamed')
+        ->and($registry->get('liberu-renamed')->path)->toBe($this->root.'/liberu-renamed')
+        ->and($problems)->toBe([]);
+});
+
+it('fails closed when cached ownership keys cannot identify a dependency failure', function () {
+    isolatedModule($this, 'good', ['requires' => ['packages' => ['local/uninstalled' => '^1.0']]]);
+    $manifest = Manifest::fromFile($this->root.'/good/module.json');
+    $registry = new ModuleRegistry(['INVALID KEY' => $manifest]);
+    $path = $this->root.'/invalid-ownership.cache';
+    (new RegistryCache())->write($registry, $path);
+
+    expect(fn () => isolatedLoader($this, cached: true, cachePath: $path)->load())
+        ->toThrow(RuntimeException::class, 'Module selection could not settle:');
 });
