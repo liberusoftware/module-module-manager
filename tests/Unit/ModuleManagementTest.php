@@ -15,6 +15,7 @@ use Liberu\Foundation\ModuleManager\ModuleInventory;
 use Liberu\Foundation\ModuleManager\ModuleLoader;
 use Liberu\Foundation\ModuleManager\ModuleManagement;
 use Liberu\Foundation\ModuleManager\ModuleRegistry;
+use Liberu\Foundation\ModuleManager\ModuleValidationGuard;
 use Liberu\Foundation\ModuleManager\ModuleValidator;
 
 final class ManagedProvider extends ServiceProvider {}
@@ -198,4 +199,49 @@ it('validates a module Composer installed under its liberusoftware/module-liberu
     $errors = (new ModuleValidator())->validate(new ModuleRegistry(['liberu-alpha' => Manifest::fromFile("{$dir}/module.json")]), app()->version());
 
     expect(implode(' ', $errors))->not->toContain('not installed')->not->toContain('version does not match');
+});
+
+it('compares dependency maps by package and constraint regardless of insertion order', function () {
+    $dependencies = ['liberusoftware/first' => '^1.0', 'liberusoftware/second' => '^2.0'];
+    managedModule($this, 'ordered', ['requires' => ['packages' => $dependencies]]);
+    $path = $this->root.'/ordered/composer.json';
+    $composer = json_decode(file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
+    $composer['require'] = array_reverse($dependencies, true);
+    file_put_contents($path, json_encode($composer, JSON_THROW_ON_ERROR));
+    $registry = new ModuleRegistry(['ordered' => Manifest::fromFile($this->root.'/ordered/module.json')]);
+
+    expect((new ModuleValidator())->validate($registry, app()->version()))->toBe([]);
+
+    $composer['require']['liberusoftware/first'] = '^3.0';
+    file_put_contents($path, json_encode($composer, JSON_THROW_ON_ERROR));
+
+    expect((new ModuleValidator())->validate($registry, app()->version()))
+        ->toContain('ordered: Composer and manifest Liberu dependencies differ.');
+});
+
+it('refuses activation of a module whose provider is invalid', function () {
+    managedModule($this, 'invalid-provider', ['provider' => 'AbsentProvider']);
+
+    expect(fn () => management($this)->enable('invalid-provider'))
+        ->toThrow(ModuleActivationRefused::class, 'not autoloadable');
+});
+
+it('keeps the fail-fast validation guard for invalid metadata', function () {
+    managedModule($this, 'invalid-provider', ['provider' => 'AbsentProvider']);
+    $registry = new ModuleRegistry(['invalid-provider' => Manifest::fromFile($this->root.'/invalid-provider/module.json')]);
+
+    expect(fn () => (new ModuleValidationGuard(new ModuleValidator()))->ensureValid($registry, app()->version()))
+        ->toThrow(RuntimeException::class, 'Module validation failed:');
+});
+
+it('rejects module Composer metadata without a package identity', function () {
+    managedModule($this, 'nameless');
+    $path = $this->root.'/nameless/composer.json';
+    $composer = json_decode(file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
+    unset($composer['name']);
+    file_put_contents($path, json_encode($composer, JSON_THROW_ON_ERROR));
+    $registry = new ModuleRegistry(['nameless' => Manifest::fromFile($this->root.'/nameless/module.json')]);
+
+    expect((new ModuleValidator())->validate($registry, app()->version()))
+        ->toContain('nameless: Composer package is not installed.');
 });

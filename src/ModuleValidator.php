@@ -122,6 +122,8 @@ final class ModuleValidator
             $canonical[$this->canonicalPackageName($package)] = $constraint;
         }
 
+        ksort($canonical);
+
         return $canonical;
     }
 }

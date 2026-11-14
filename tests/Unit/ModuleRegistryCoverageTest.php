@@ -244,3 +244,9 @@ it('rejects a disabled capability provider', function () {
     expect(fn () => (new ModuleRegistry(['owner' => $owner, 'consumer' => $consumer]))->resolve([]))
         ->toThrow(DependencyResolutionFailed::class, 'requires enabled capability');
 });
+
+it('resolves an installed external library without treating it as a module owner', function () {
+    $manifest = makeCoverageManifest(['requires' => ['packages' => ['composer/semver' => '^3.0']]], 'local/external-consumer');
+
+    expect((new ModuleRegistry(['example' => $manifest]))->resolve([]))->toBe([$manifest]);
+});
