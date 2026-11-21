@@ -25,10 +25,7 @@ beforeEach(function () {
     (require dirname(__DIR__, 2).'/database/migrations/2026_11_09_000000_create_module_activations_table.php')->up();
     $this->root = sys_get_temp_dir().'/managed-'.bin2hex(random_bytes(5));
     mkdir($this->root, 0777, true);
-    $installedPath = is_file(dirname(__DIR__, 2).'/vendor/composer/installed.php')
-        ? dirname(__DIR__, 2).'/vendor/composer/installed.php'
-        : dirname(__DIR__, 4).'/vendor/composer/installed.php';
-    $this->composer = require $installedPath;
+    $this->composer = require dirname(__DIR__, 2).'/vendor/composer/installed.php';
     $this->original = $this->composer;
 });
 

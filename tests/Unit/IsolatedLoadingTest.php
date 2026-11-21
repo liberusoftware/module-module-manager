@@ -34,10 +34,7 @@ final class IsolatedThrowingProvider extends ServiceProvider
 beforeEach(function () {
     $this->root = sys_get_temp_dir().'/isolated-'.bin2hex(random_bytes(5));
     mkdir($this->root, 0777, true);
-    $installedPath = is_file(dirname(__DIR__, 2).'/vendor/composer/installed.php')
-        ? dirname(__DIR__, 2).'/vendor/composer/installed.php'
-        : dirname(__DIR__, 4).'/vendor/composer/installed.php';
-    $this->installed = require $installedPath;
+    $this->installed = require dirname(__DIR__, 2).'/vendor/composer/installed.php';
     $this->original = $this->installed;
 });
 
