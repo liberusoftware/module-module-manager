@@ -34,7 +34,10 @@ final class IsolatedThrowingProvider extends ServiceProvider
 beforeEach(function () {
     $this->root = sys_get_temp_dir().'/isolated-'.bin2hex(random_bytes(5));
     mkdir($this->root, 0777, true);
-    $this->installed = require dirname(__DIR__, 2).'/vendor/composer/installed.php';
+    $installedPath = file_exists(dirname(__DIR__, 2).'/vendor/composer/installed.php')
+        ? dirname(__DIR__, 2).'/vendor/composer/installed.php'
+        : dirname(__DIR__, 4).'/vendor/composer/installed.php';
+    $this->installed = require $installedPath;
     $this->original = $this->installed;
 });
 
@@ -207,7 +210,7 @@ it('reports through the commands', function () {
 
 it('boots valid providers and exposes feature listing and cache lifecycle commands', function () {
     isolatedModule($this, 'good');
-    config(['modules.paths' => [$this->root], 'modules.isolate_failures' => false, 'modules.cache_path' => $this->root.'/registry.cache']);
+    config(['modules.paths' => [$this->root], 'modules.required' => [], 'modules.isolate_failures' => false, 'modules.cache_path' => $this->root.'/registry.cache']);
     $this->app->register(ModuleManagerServiceProvider::class, true);
 
     expect($this->app->bound('isolated.good'))->toBeTrue()
@@ -225,7 +228,7 @@ it('boots valid providers and exposes feature listing and cache lifecycle comman
 
 it('warns about bypassing discovery and refuses it in strict validation', function () {
     isolatedModule($this, 'good');
-    config(['modules.paths' => [$this->root], 'modules.isolate_failures' => true]);
+    config(['modules.paths' => [$this->root], 'modules.required' => [], 'modules.isolate_failures' => true]);
     $this->app->register(ModuleManagerServiceProvider::class, true);
     $packages = new PackageManifest(new Filesystem(), base_path(), $this->root.'/packages.php');
     $packages->manifest = ['local/good' => ['providers' => [IsolatedGoodProvider::class]]];
